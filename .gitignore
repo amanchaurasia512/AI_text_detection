@@ -1,10 +1,19 @@
+# Environment
 .env
 .venv/
+
+# Python artifacts
 __pycache__/
 *.py[cod]
-.pytest_cache/
 *.egg-info/
+
+# Test artifacts
+.pytest_cache/
+
+# Build artifacts
 build/
 dist/
+
+# Generated reports
 outputs/*
 !outputs/.gitkeep
