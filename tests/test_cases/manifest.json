@@ -1,0 +1,6 @@
+{
+  "human.txt": {"intended_origin": "Human-written synthetic fixture", "ground_truth": false},
+  "ai_generated.txt": {"intended_origin": "AI-generated style synthetic fixture", "ground_truth": false},
+  "mixed.txt": {"intended_origin": "Mixed human-written and AI-style synthetic fixture", "ground_truth": false},
+  "note": "These fixtures exercise the processing pipeline. They are not labeled ground truth for detector accuracy."
+}

@@ -1,0 +1,33 @@
+import json
+from pathlib import Path
+from ai_text_audit.detectors.mock import MockDetector
+from ai_text_audit.pipeline import analyze_document
+from ai_text_audit.reporters.json_report import write_json
+from ai_text_audit.reporters.markdown_report import write_markdown
+from ai_text_audit.segmentation import make_paragraphs
+
+ROOT = Path(__file__).parent
+
+
+def test_all_text_fixtures_pipeline_and_reports(tmp_path, monkeypatch):
+    monkeypatch.setenv("AUDIT_MIN_PARAGRAPH_CHARS", "1")
+    for name in ("human.txt", "ai_generated.txt", "mixed.txt"):
+        # Text fixtures are exercised as paragraph inputs; CLI documents are PDF/TEX only.
+        paragraphs = make_paragraphs((ROOT / "test_cases" / name).read_text(), 1, "fixture")
+        assert len(paragraphs) >= 2
+        assert all(MockDetector().analyze(p.extracted_text).status == "success" for p in paragraphs)
+    assert json.loads((ROOT / "test_cases" / "manifest.json").read_text())["human.txt"]["ground_truth"] is False
+
+
+def test_short_text_and_report_writers(tmp_path, monkeypatch):
+    monkeypatch.setenv("AUDIT_MIN_PARAGRAPH_CHARS", "80")
+    source = tmp_path / "short.tex"
+    source.write_text("\\documentclass{article}\n\\begin{document}\nToo short.\n\\end{document}", encoding="utf8")
+    report = analyze_document(source, MockDetector())
+    paragraph = report.document.pages[0].paragraphs[0]
+    assert paragraph.detection_result.status == "insufficient_text"
+    write_json(report, tmp_path / "report.json")
+    write_markdown(report, tmp_path / "report.md")
+    summary = json.loads((tmp_path / "report.json").read_text())["document_summary"]
+    assert summary["skipped_paragraphs"] >= 1
+    assert "Paragraph results" in (tmp_path / "report.md").read_text()
