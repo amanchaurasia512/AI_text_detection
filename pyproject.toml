@@ -22,6 +22,7 @@ dev = ["pytest>=8"]
 
 [project.scripts]
 ai-text-audit = "ai_text_audit.cli:main"
+ai-text-audit-ollama-benchmark = "ai_text_audit.ollama_benchmark:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

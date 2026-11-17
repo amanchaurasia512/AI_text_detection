@@ -49,4 +49,17 @@ API keys are read from environment/config and are not deliberately included in r
 
 The three text fixtures and `tests/test_cases/manifest.json` describe intended synthetic origins. They are pipeline examples, not ground-truth labels or detector validation. Run `pytest` to exercise extraction, segmentation, missing configuration, retry/error handling, mock processing, and report writing without a paid API key.
 
+## Sequential Ollama benchmark
+
+The P05 runner benchmarks all `eligible` prose paragraphs in a saved P04 JSON report, ordered by character length. It sends each full paragraph sequentially to the existing `OllamaDetector`; it does not truncate the input. Set `AUDIT_OLLAMA_HOST` if the local server is not at `http://localhost:11434`, ensure the requested model is already available with `ollama list`, then run:
+
+```bash
+PYTHONPATH=src python -m ai_text_audit.ollama_benchmark \
+  --input outputs/p04_category_aware_<timestamp>/report.json \
+  --model qwen2.5:3b \
+  --output outputs/ollama_benchmark_<timestamp>/
+```
+
+The runner shows per-chunk progress and periodically samples Linux system/Ollama process RAM, CPU, swap, and optional NVIDIA GPU utilization. If available RAM falls below the configured floor (`--low-memory-gib`, default 1 GiB, or 5% of total RAM, whichever is larger) or swap is nearly full, it cancels the active Ollama HTTP request where possible and stops further chunks. Ollama token counts and token durations are reported only when returned by the API. GPU metrics require `nvidia-smi`.
+
 See [docs/architecture.md](docs/architecture.md) for data flow and limitations.
