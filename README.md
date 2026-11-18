@@ -63,3 +63,15 @@ PYTHONPATH=src python -m ai_text_audit.ollama_benchmark \
 The runner shows per-chunk progress and periodically samples Linux system/Ollama process RAM, CPU, swap, and optional NVIDIA GPU utilization. If available RAM falls below the configured floor (`--low-memory-gib`, default 1 GiB, or 5% of total RAM, whichever is larger) or swap is nearly full, it cancels the active Ollama HTTP request where possible and stops further chunks. Ollama token counts and token durations are reported only when returned by the API. GPU metrics require `nvidia-smi`.
 
 See [docs/architecture.md](docs/architecture.md) for data flow and limitations.
+
+## Concurrent Ollama experiment (P06)
+
+P05 remains the sequential baseline. P06 runs the same eligible P04 paragraphs, in full and with the same length ordering and detector metadata, using a bounded thread pool. Run worker levels 2 and 3 separately on the Ubuntu machine that hosts local Ollama:
+
+```bash
+PYTHONPATH=src python -m ai_text_audit.ollama_concurrency_benchmark \\
+  --input outputs/p04_category_aware_20261117T115439Z/report.json \\
+  --model qwen2.5:3b --concurrency 2 --output outputs/
+```
+
+Repeat with `--concurrency 3`. Each run creates a fresh timestamped `outputs/ollama_concurrency_<timestamp>/` directory with JSON/Markdown reports and result, length-range, and resource-sample CSV files. Compare P06 with P05 using the same input report, model, host, and similar machine state. Per-paragraph request latency, overall workload completion time, and aggregate successful paragraphs per minute are separate measures; do not infer a speedup without measured evidence. Memory safety thresholds use the same defaults as P05 (`--low-memory-gib 1`, `--low-memory-percent 5`); new requests stop at the floor while already-running requests are allowed to finish, bounded by their request timeout. A stopped run is marked incomplete.
